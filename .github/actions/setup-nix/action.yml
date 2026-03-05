@@ -9,7 +9,7 @@ inputs:
     description: The sandbox setting in nix.conf
     default: "true"
   extra-nix-config:
-    type: string
+    description: Extra entries to add to nix.conf
     default: ""
 
 runs:
