@@ -4,17 +4,21 @@
 // @run-at      document-idle
 // ==/UserScript==
 
-const repo = "Defelo/nixpkgs-review-gha";
+const user = document.querySelector("header.GlobalNav button[data-login]")?.getAttribute("data-login") ?? null;
+
+const repo = user ? `${user}/nixpkgs-review-gha` : null;
 
 const reviewDefaults = ({ title, commits, labels, author, authoredByMe, hasLinuxRebuilds, hasDarwinRebuilds }) => {
-  const darwinSandbox = "true";
+  const darwinSandbox = "relaxed";
+
+  const hasRebuilds = hasLinuxRebuilds || hasDarwinRebuilds;
 
   return {
     // "branch": "main",
-    "x86_64-linux": hasLinuxRebuilds,
-    "aarch64-linux": hasLinuxRebuilds,
-    "x86_64-darwin": hasDarwinRebuilds ? `yes_sandbox_${darwinSandbox}` : "no",
-    "aarch64-darwin": hasDarwinRebuilds ? `yes_sandbox_${darwinSandbox}` : "no",
+    "x86_64-linux": !hasRebuilds || hasLinuxRebuilds,
+    "aarch64-linux": !hasRebuilds || hasLinuxRebuilds,
+    "x86_64-darwin": !hasRebuilds || hasDarwinRebuilds ? `yes_sandbox_${darwinSandbox}` : "no",
+    "aarch64-darwin": !hasRebuilds || hasDarwinRebuilds ? `yes_sandbox_${darwinSandbox}` : "no",
     // "extra-args": "",
     // "push-to-cache": true,
     // "upterm": false,
@@ -39,7 +43,9 @@ const query = async (doc, sel) => {
 };
 
 const getPrDetails = pr => {
-  const title = document.querySelector("bdi.js-issue-title.markdown-title").innerText;
+  const title = document.querySelector(
+    "div[data-component=TitleArea] .text-normal.markdown-title, bdi.js-issue-title.markdown-title",
+  ).innerText;
   const commits = [...document.querySelectorAll(".TimelineItem-body a.markdown-title[href*='/commits/']")].flatMap(
     ({ title, href }) => {
       const match = /\/NixOS\/nixpkgs\/pull\/(\d+)\/commits\/([0-9a-f]+)$/i.exec(href);
@@ -56,11 +62,13 @@ const getPrDetails = pr => {
   );
   const labels = [...document.querySelectorAll("div.js-issue-labels > a")].map(x => x.innerText);
   const author = document.querySelector(".js-discussion > :first-child a.author").href.split("/").at(-1);
-  const self = document.querySelector("div.AppHeader-user button[data-login]").getAttribute("data-login");
-  const authoredByMe = author === self;
+  const authoredByMe = author === user;
   const hasLinuxRebuilds = !labels.some(l => /rebuild-linux: 0$/.test(l));
   const hasDarwinRebuilds = !labels.some(l => /rebuild-darwin: 0$/.test(l));
-  const state = document.querySelector("span.State").innerText.trim().toUpperCase();
+  const state = document
+    .querySelector("div[data-component=TitleArea] div[data-component=PH_LeadingVisual] span, span.State")
+    .innerText.trim()
+    .toUpperCase();
 
   return { title, commits, labels, author, authoredByMe, hasLinuxRebuilds, hasDarwinRebuilds, state };
 };
@@ -116,9 +124,9 @@ const setupPrPage = async () => {
   if (match === null) return;
 
   const pr = match[1];
-  const actions = await query(document, ".gh-header-show .gh-header-actions");
+  const actions = await query(document, "div[data-component=PH_Actions], .gh-header-show .gh-header-actions");
 
-  if (actions.querySelector(".run-nixpkgs-review") === null) {
+  if (actions.querySelector(".run-nixpkgs-review") === null && repo) {
     const btn = document.createElement("button");
     btn.classList.add("Button", "Button--secondary", "Button--small", "run-nixpkgs-review");
     btn.innerText = "Run nixpkgs-review";

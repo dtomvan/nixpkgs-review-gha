@@ -14,7 +14,7 @@ Run [nixpkgs-review](https://github.com/Mic92/nixpkgs-review) in GitHub Actions
 ## Setup
 1. [Fork](https://github.com/Defelo/nixpkgs-review-gha/fork) this repository.
 2. In your fork, go to the [Actions](../../actions) tab and enable GitHub Actions workflows.
-3. If you don't want to set up [automatic self-updates](#automatic-self-updates-optional), please disable the `self-update` workflow ([Actions / `self-update`](../../actions/workflows/self-update.yml) > `...` button (top right corner) > `Disable workflow`).
+3. If you want to set up [automatic self-updates](#automatic-self-updates-optional), please enable the `self-update` workflow ([Actions / `self-update`](../../actions/workflows/self-update.yml) > `...` button (top right corner) > `Enable workflow`).
 
 ### Post Results / Auto Approve/Merge (optional)
 If you want nixpkgs-review-gha to automatically post the results on the reviewed pull requests or automatically mark them as ready for review or approve/merge them, you need to generate a [personal access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens):
@@ -43,8 +43,22 @@ Follow these steps if you want nixpkgs-review-gha to push new packages to a [Cac
 2. [Create a new variable](../../settings/variables/actions/new) with the name `CACHIX_CACHE` and set it to the name of your Cachix cache.
 3. [Create a new secret](../../settings/secrets/actions/new) with the name `CACHIX_AUTH_TOKEN` and set its value to your auth token. If you are using a self-signed cache, you also need to create a `CACHIX_SIGNING_KEY` secret and set its value to your private signing key.
 
+### Extra Nix Config (optional)
+If you have additional configuration you want to append to `/etc/nix/nix.conf`, you can [create a new variable](../../settings/variables/actions/new) with the name `EXTRA_NIX_CONFIG`.
+For example, if you want to configure nix to use additional substituters, set its value to the following:
+
+```
+extra-substituters = https://nix-community.cachix.org
+extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=
+```
+
 ### Shortcuts on nixpkgs PR pages (optional)
-Add [`shortcut.js`](shortcut.js) as a user script in your browser for `https://github.com/` for example using the [User JavaScript and CSS chrome extension](https://chromewebstore.google.com/detail/user-javascript-and-css/nbhcbdghjpllgmfilhnhkllmkecfmpld) or [Violentmonkey](https://violentmonkey.github.io/). Don't forget to update the `repo` constant at the top of the file to point to your fork.
+Add [`shortcut.user.js`](shortcut.user.js) as a userscript in your browser for `https://github.com/` for example using the [User JavaScript and CSS chrome extension](https://chromewebstore.google.com/detail/user-javascript-and-css/nbhcbdghjpllgmfilhnhkllmkecfmpld) or [Violentmonkey](https://violentmonkey.github.io/).
+
+The userscript assumes that you forked this repository to your personal account without changing its name. However, if you forked the repo to an orgnization instead or used a custom repo name or if you would like to use a different repo you have access to, you need to explicitly configure the userscript by updating the `repo` constant at the top of the file to point to the repository you would like to use.
+
+> [!TIP]
+> Opening the [raw file](shortcut.user.js?raw=true) with Violentmonkey installed will prompt for installation.
 
 ## Usage
 1. Open the [review workflow in the "Actions" tab](../../actions/workflows/review.yml)
